@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "SHT20.h"
+#include "PH_OEM.h"
 
 /** @addtogroup Template_Project
   * @{
@@ -51,6 +52,7 @@ static void USART_Config(void);
 void usart1_putc(char c);
 void usart1_puts(char *s);
 void i2c1_Init(void);
+void GPIO_conf(void);
 /**
   * @brief  Main program.
   * @param  None
@@ -58,6 +60,8 @@ void i2c1_Init(void);
 
 
   */
+ char buffer[80] = {'\0'};
+
 int main(void)
 {
   // RCC_setup_HSI();
@@ -65,10 +69,18 @@ int main(void)
   // USART_Config();
   // I2C1_init();
   RCC_setup();
+  GPIO_conf();
+
   USART_Config();
   i2c1_Init();
-
-
+  
+  float rawTemperature = 0;
+  float rawHumidity = 0;
+  float rawPH = 0;
+  double tempTemperature = 0.00;
+  double tempHumidity = 0.00;
+  double tempPH = 0.00;
+  bool retur = 0;
   while (1)
   {
 
@@ -91,6 +103,36 @@ int main(void)
 		//  Delay 0.5 sec 
 		delay(5);
     usart1_puts("HELLOOOOOO");
+    GPIO_SetBits(GPIOB,GPIO_Pin_9);
+    GPIO_SetBits(GPIOB,GPIO_Pin_5);
+    delay(5000);
+    usart1_puts("Readyyyyy");
+
+    // retur = SHT20ReadTemperature(I2C1, &rawTemperature);
+    // usart1_putc((char)retur);
+
+
+    if(SHT20ReadTemperature(I2C1, &rawTemperature))
+    {
+      tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "Temp: %f\r\n", tempTemperature);
+      usart1_puts(buffer);
+    }
+    // if(SHT20ReadHumidity(I2C1, &rawHumidity))
+    // {
+    //   tempHumidity = rawHumidity; // * (125/ 65536.0) -6.0;
+    //   sprintf(buffer, "Humidity: %f\r\n", tempHumidity);
+    //   usart1_puts(buffer);
+    // }
+
+
+    if(OEM_READ_PH(I2C1, &rawPH))
+    {
+      tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "PH: %f\r\n", tempPH);
+      usart1_puts(buffer);
+    }
+
   }
 }
 
@@ -286,6 +328,19 @@ void i2c1_Init(void)
   I2C_Init(I2C1, &I2C_InitStructure);
 
   I2C_Cmd(I2C1, ENABLE);
+}
+
+void GPIO_conf(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB,ENABLE);
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5|GPIO_Pin_8|GPIO_Pin_9;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
 
 #ifdef  USE_FULL_ASSERT

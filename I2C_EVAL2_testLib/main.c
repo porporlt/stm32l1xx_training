@@ -28,6 +28,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "SHT20.h"
+#include "PH_OEM.h"
 // #include "PH_OEM.h"
 // #include "SHT20.h"
 
