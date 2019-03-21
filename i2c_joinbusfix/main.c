@@ -126,6 +126,13 @@ int main(void)
       usart1_puts(buffer);
     }
 
+    if(OEM_READ_PH(I2C1, &rawPH))
+    {
+      tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "PH: %f\r\n", tempPH);
+      usart1_puts(buffer);
+    }
+
     i2c1_deinit();
     // if(SHT20ReadHumidity(I2C1, &rawHumidity))
     // {
@@ -135,12 +142,7 @@ int main(void)
     // }
 
 
-    if(OEM_READ_PH(I2C1, &rawPH))
-    {
-      tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
-      sprintf(buffer, "PH: %f\r\n", tempPH);
-      usart1_puts(buffer);
-    }
+
 
   }
 }
