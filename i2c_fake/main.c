@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "SHT20.h"
 
 /** @addtogroup Template_Project
   * @{
@@ -49,6 +50,7 @@ void RCC_setup(void);
 static void USART_Config(void);
 void usart1_putc(char c);
 void usart1_puts(char *s);
+void i2c1_Init(void);
 /**
   * @brief  Main program.
   * @param  None
@@ -64,7 +66,7 @@ int main(void)
   // I2C1_init();
   RCC_setup();
   USART_Config();
-  
+  i2c1_Init();
 
 
   while (1)
@@ -252,6 +254,38 @@ void usart1_puts(char *s)
   {
     usart1_putc(*s++); //send character 1 time
   }
+}
+
+void i2c1_Init(void)
+{
+  I2C_DeInit(I2C1);
+  I2C_InitTypeDef   I2C_InitStructure;
+  GPIO_InitTypeDef  GPIO_InitStructure;
+  // i2c1_DeInit();
+  /*!< LM75_I2C Periph clock enable */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
+    
+  /*!< LM75_I2C_SCL_GPIO_CLK, LM75_I2C_SDA_GPIO_CLK 
+       and LM75_I2C_SMBUSALERT_GPIO_CLK Periph clock enable */
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB , ENABLE);
+
+  /* Connect PXx to I2C_SCL */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_I2C1);
+
+  /* Connect PXx to I2C_SDA */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_I2C1); 
+
+  /*!< Configure I2C1 pins: SCL and SDA*/
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+  I2C_Init(I2C1, &I2C_InitStructure);
+
+  I2C_Cmd(I2C1, ENABLE);
 }
 
 #ifdef  USE_FULL_ASSERT
