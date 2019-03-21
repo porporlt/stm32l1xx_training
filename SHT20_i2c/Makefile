@@ -26,7 +26,8 @@ SRC+=	./system_stm32l1xx.c \
 		$(ST)/src/stm32l1xx_dma.c \
 		$(ST)/src/stm32l1xx_exti.c \
 		$(ST)/src/stm32l1xx_flash.c \
-		$(ST)/src/stm32l1xx_flash_ramfunc.c 
+		$(ST)/src/stm32l1xx_flash_ramfunc.c \
+		$(ST)/src/stm32l1xx_i2c.c
 
 #Included Header Files
 CFLAGS_INCLUDE=-I./ \
@@ -40,8 +41,9 @@ USER_LIB=../User_Lib
 
 #User Source Files
 SRC+=	./main.c \
-		./stm32l1xx_it.c 
-
+		./stm32l1xx_it.c \
+		
+		
 
 #User Header Files
 CFLAGS_INCLUDE+=-I./ \
