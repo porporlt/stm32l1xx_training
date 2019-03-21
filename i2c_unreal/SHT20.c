@@ -100,7 +100,7 @@ bool SHT20ReadTemperature(I2C_TypeDef* i2c, float* raw)
   I2C_ReceiveData(i2c);
 
   result = (msb << 8) | lsb;
-
+  usart1_putc('e');
   //check xsb
   if(SHT20CheckCRC(result, xsb))
   {

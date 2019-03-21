@@ -43,6 +43,7 @@ bool SHT20ReadHumidity(I2C_TypeDef* i2c, float* raw)
 
   result = (msb << 8) | lsb;
 
+  usart1_putc('e');
   // check xsb
   if(SHT20CheckCRC(result, xsb)){
     result &= 0xFFFC;

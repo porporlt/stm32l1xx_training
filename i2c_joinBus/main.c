@@ -84,23 +84,26 @@ int main(void)
   bool retur = 0;
   while (1)
   {
-    i2c1_Init();
+    // i2c1_DeInit();
+
+    // i2c1_Init_Remap();
+
     /* LED at PB9 ON */
-    GPIO_SetBits(GPIOB,GPIO_Pin_7);
+    // GPIO_SetBits(GPIOB,GPIO_Pin_7);
     /* Delay 0.5 sec */
-    delay(5);
+    // delay(5);
     /* LED at PB9 OFF */
-    GPIO_ResetBits(GPIOB,GPIO_Pin_7);
+    // GPIO_ResetBits(GPIOB,GPIO_Pin_7);
     //  Delay 0.5 sec 
-    delay(5);
+    // delay(5);
 
     // usart_puts("Hello");
     /* LED at PB9 ON */
-    GPIO_SetBits(GPIOB,GPIO_Pin_7);
+    // GPIO_SetBits(GPIOB,GPIO_Pin_7);
 		/* Delay 0.5 sec */
-		delay(5);
+		// delay(5);
 		/* LED at PB9 OFF */
-		GPIO_ResetBits(GPIOB,GPIO_Pin_7);
+		// GPIO_ResetBits(GPIOB,GPIO_Pin_7);
 		//  Delay 0.5 sec 
 		delay(5);
     usart1_puts("HELLOOOOOO");
@@ -113,12 +116,14 @@ int main(void)
     // usart1_putc((char)retur);
 
     
-    if(SHT20ReadTemperature(I2C1, &rawTemperature))
-    {
-      tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
-      sprintf(buffer, "Temp: %f\r\n", tempTemperature);
-      usart1_puts(buffer);
-    }
+    // if(SHT20ReadTemperature(I2C1, &rawTemperature))
+    // {
+    //   tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
+    //   sprintf(buffer, "Temp: %f\r\n", tempTemperature);
+    //   usart1_puts(buffer);
+    // }
+
+
     // if(SHT20ReadHumidity(I2C1, &rawHumidity))
     // {
     //   tempHumidity = rawHumidity; // * (125/ 65536.0) -6.0;
@@ -127,16 +132,17 @@ int main(void)
     // }
 
 
-    if(OEM_READ_PH(I2C1, &rawPH))
-    {
-      tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
-      sprintf(buffer, "PH: %f\r\n", tempPH);
-      usart1_puts(buffer);
-    }
+    // if(OEM_READ_PH(I2C1, &rawPH))
+    // {
+    //   tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
+    //   sprintf(buffer, "PH: %f\r\n", tempPH);
+    //   usart1_puts(buffer);
+    // }
 
-    I2C_DeInit(I2C1);
+    // i2c1_DeInit();
 
     i2c1_Init_Remap();
+    delay(5000);
 
     if(SHT20ReadTemperature(I2C1, &rawTemperature))
     {
@@ -144,8 +150,6 @@ int main(void)
       sprintf(buffer, "Temp2: %f\r\n", tempTemperature);
       usart1_puts(buffer);
     }
-
-    I2C_DeInit(I2C1);
 
 
   }
@@ -389,6 +393,35 @@ void GPIO_conf(void)
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
+}
+
+
+void i2c1_DeInit(void)
+{
+  GPIO_InitTypeDef  GPIO_InitStructure;
+
+  /*!< Disable LM75_I2C */
+  I2C_Cmd(I2C1, DISABLE);
+  
+  /*!< DeInitializes the LM75_I2C */
+  I2C_DeInit(I2C1);
+  
+  /*!< LM75_I2C Periph clock disable */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, DISABLE);
+    
+  /*!< Configure LM75_I2C pins: SCL */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+  /*!< Configure LM75_I2C pins: SDA */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+  /*!< Configure LM75_I2C pin: SMBUS ALERT */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
 }
 
 #ifdef  USE_FULL_ASSERT
