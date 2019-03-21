@@ -74,7 +74,7 @@ int main(void)
 
   USART_Config();
   // i2c1_Init();
-  i2c1_Init_Remap();
+  // i2c1_Init_Remap();
   float rawTemperature = 0;
   float rawHumidity = 0;
   float rawPH = 0;
@@ -84,7 +84,7 @@ int main(void)
   bool retur = 0;
   while (1)
   {
-
+    i2c1_Init();
     /* LED at PB9 ON */
     GPIO_SetBits(GPIOB,GPIO_Pin_7);
     /* Delay 0.5 sec */
@@ -112,7 +112,7 @@ int main(void)
     // retur = SHT20ReadTemperature(I2C1, &rawTemperature);
     // usart1_putc((char)retur);
 
-
+    
     if(SHT20ReadTemperature(I2C1, &rawTemperature))
     {
       tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
@@ -127,12 +127,26 @@ int main(void)
     // }
 
 
-    // if(OEM_READ_PH(I2C1, &rawPH))
-    // {
-    //   tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
-    //   sprintf(buffer, "PH: %f\r\n", tempPH);
-    //   usart1_puts(buffer);
-    // }
+    if(OEM_READ_PH(I2C1, &rawPH))
+    {
+      tempPH = rawPH; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "PH: %f\r\n", tempPH);
+      usart1_puts(buffer);
+    }
+
+    I2C_DeInit(I2C1);
+
+    i2c1_Init_Remap();
+
+    if(SHT20ReadTemperature(I2C1, &rawTemperature))
+    {
+      tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "Temp2: %f\r\n", tempTemperature);
+      usart1_puts(buffer);
+    }
+
+    I2C_DeInit(I2C1);
+
 
   }
 }
