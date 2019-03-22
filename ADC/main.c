@@ -65,13 +65,13 @@ int main(void)
   {
 
 
-    ADC_SoftwareStartConv(ADC1);
+    // ADC_SoftwareStartConv(ADC1);
     /* LED at PB9 ON */
-    GPIO_SetBits(GPIOA,GPIO_Pin_2 | GPIO_Pin_3);
+    // GPIO_SetBits(GPIOA,GPIO_Pin_2 | GPIO_Pin_3);
     /* Delay 0.5 sec */
     delay(5);
     /* LED at PB9 OFF */
-    GPIO_ResetBits(GPIOA,GPIO_Pin_2 | GPIO_Pin_3);
+    // GPIO_ResetBits(GPIOA,GPIO_Pin_2 | GPIO_Pin_3);
     //  Delay 0.5 sec 
     delay(5);
 
