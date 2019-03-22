@@ -86,6 +86,7 @@ int main(void)
   double tempHumidity = 0.00;
   double tempPH = 0.00;
   bool retur = 0;
+
   while (1)
   {
     i2c1_Init_Remap();
@@ -113,6 +114,7 @@ int main(void)
 
     i2c1_Init();
     usart1_puts("HELL2222222O");
+    OEM_ACTIVE(I2C1);
     // GPIO_SetBits(GPIOB,GPIO_Pin_9);
     // GPIO_SetBits(GPIOB,GPIO_Pin_5);
     delay(5000);
@@ -132,7 +134,9 @@ int main(void)
       sprintf(buffer, "PH: %f\r\n", tempPH);
       usart1_puts(buffer);
     }
-
+    
+    OEM_DEACTIVE(I2C1);
+    delay(1000);
     i2c1_deinit();
     // if(SHT20ReadHumidity(I2C1, &rawHumidity))
     // {
