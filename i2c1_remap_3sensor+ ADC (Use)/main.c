@@ -53,6 +53,14 @@ void usart1_putc(char c);
 void usart1_puts(char *s);
 void i2c1_Init(void);
 void GPIO_conf(void);
+void i2c1_Init_Remap(void);
+
+
+void i2c1_deinit(void);
+void i2c1_remap_deinit(void);
+
+void ADC_Config(void);
+void ADC_deinit(void);
 /**
   * @brief  Main program.
   * @param  None
@@ -70,10 +78,13 @@ int main(void)
   // I2C1_init();
   RCC_setup();
   GPIO_conf();
-
   USART_Config();
-  i2c1_Init();
-  
+  // // i2c1_Init();
+  GPIO_SetBits(GPIOB,GPIO_Pin_0);
+  GPIO_SetBits(GPIOB,GPIO_Pin_1);
+  GPIO_SetBits(GPIOB,GPIO_Pin_5);
+
+
   float rawTemperature = 0;
   float rawHumidity = 0;
   float rawPH = 0;
@@ -81,50 +92,46 @@ int main(void)
   double tempHumidity = 0.00;
   double tempPH = 0.00;
   bool retur = 0;
+  int adc_value;
+
   while (1)
   {
-
-    /* LED at PB9 ON */
-    GPIO_SetBits(GPIOB,GPIO_Pin_7);
-    /* Delay 0.5 sec */
-    delay(5);
-    /* LED at PB9 OFF */
-    GPIO_ResetBits(GPIOB,GPIO_Pin_7);
-    //  Delay 0.5 sec 
-    delay(5);
-
-    // usart_puts("Hello");
-    /* LED at PB9 ON */
-    GPIO_SetBits(GPIOB,GPIO_Pin_7);
-		/* Delay 0.5 sec */
-		delay(5);
-		/* LED at PB9 OFF */
-		GPIO_ResetBits(GPIOB,GPIO_Pin_7);
-		//  Delay 0.5 sec 
-		delay(5);
+    i2c1_Init_Remap();
     usart1_puts("HELLOOOOOO");
-    GPIO_SetBits(GPIOB,GPIO_Pin_9);
-    GPIO_SetBits(GPIOB,GPIO_Pin_5);
+    // GPIO_SetBits(GPIOB,GPIO_Pin_9);
+    // GPIO_SetBits(GPIOB,GPIO_Pin_5);
     delay(5000);
     usart1_puts("Readyyyyy");
 
     // retur = SHT20ReadTemperature(I2C1, &rawTemperature);
     // usart1_putc((char)retur);
 
+    
 
-    // if(SHT20ReadTemperature(I2C1, &rawTemperature))
-    // {
-    //   tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
-    //   sprintf(buffer, "Temp: %f\r\n", tempTemperature);
-    //   usart1_puts(buffer);
-    // }
-    // if(SHT20ReadHumidity(I2C1, &rawHumidity))
-    // {
-    //   tempHumidity = rawHumidity; // * (125/ 65536.0) -6.0;
-    //   sprintf(buffer, "Humidity: %f\r\n", tempHumidity);
-    //   usart1_puts(buffer);
-    // }
+    if(SHT20ReadTemperature(I2C1, &rawTemperature))
+    {
+      tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "Temp: %f\r\n", tempTemperature);
+      usart1_puts(buffer);
+    }
 
+
+    i2c1_remap_deinit();
+
+
+    i2c1_Init();
+    usart1_puts("HELL2222222O");
+    OEM_ACTIVE(I2C1);
+    delay(5000);
+    usart1_puts("Read2222y");
+
+
+    if(SHT20ReadTemperature(I2C1, &rawTemperature))
+    {
+      tempTemperature = rawTemperature; // * (175.72 / 65536.0) -46.85;
+      sprintf(buffer, "Temp: %f\r\n", tempTemperature);
+      usart1_puts(buffer);
+    }
 
     if(OEM_READ_PH(I2C1, &rawPH))
     {
@@ -132,7 +139,19 @@ int main(void)
       sprintf(buffer, "PH: %f\r\n", tempPH);
       usart1_puts(buffer);
     }
-
+    
+    OEM_DEACTIVE(I2C1);
+    delay(500);
+    i2c1_deinit();
+    delay(1000);
+    
+    ADC_Config();
+    delay(1000);
+    adc_value = ADC_GetConversionValue(ADC1);
+    sprintf(buffer, "ADC-VALUE : %d\r\n", adc_value);
+    usart_puts(buffer);
+    ADC_deinit();
+    delay(1000);
   }
 }
 
@@ -298,9 +317,54 @@ void usart1_puts(char *s)
   }
 }
 
+
+void ADC_Config(void)
+{
+
+  //ADC
+  ADC_InitTypeDef ADC_InitStructure;
+  GPIO_InitTypeDef  GPIO_InitStructure;
+
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+  // input of ADC PB12 (it doesn't seem to be needed, as default GPIO state is floating input)
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+  GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
+  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+  ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
+  ADC_InitStructure.ADC_ScanConvMode =  DISABLE;
+  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+  ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+  ADC_InitStructure.ADC_NbrOfConversion = 1;
+  ADC_Init(ADC1, &ADC_InitStructure);
+
+  ADC_RegularChannelConfig(ADC1, ADC_Channel_18, 1, ADC_SampleTime_4Cycles);
+  ADC_ContinuousModeCmd(ADC1, ENABLE);
+
+  ADC_Cmd(ADC1, ENABLE);//enable ADC1
+    /* Wait until the ADC1 is ready */
+  while(ADC_GetFlagStatus(ADC1, ADC_FLAG_ADONS) == RESET)
+  {
+  }
+  // start conversion
+  ADC_SoftwareStartConv(ADC1);// start conversion (will be endless as we are in continuous mode)
+
+}
+
+void ADC_deinit(void){
+
+  ADC_Cmd(ADC1, DISABLE);//enable ADC1
+  ADC_DeInit(ADC1);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+
+}
+
+
 void i2c1_Init(void)
 {
-  I2C_DeInit(I2C1);
   I2C_InitTypeDef   I2C_InitStructure;
   GPIO_InitTypeDef  GPIO_InitStructure;
   // i2c1_DeInit();
@@ -325,22 +389,113 @@ void i2c1_Init(void)
   GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
   GPIO_Init(GPIOB, &GPIO_InitStructure);
 
+
+  I2C_DeInit(I2C1);
+  I2C_InitStructure.I2C_ClockSpeed = 50000;
+  I2C_InitStructure.I2C_Mode =  I2C_Mode_I2C;
+  I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
+  I2C_InitStructure.I2C_OwnAddress1 =0x00;
+  I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
+  I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+
+
   I2C_Init(I2C1, &I2C_InitStructure);
 
   I2C_Cmd(I2C1, ENABLE);
 }
 
+void i2c1_deinit(void){
+
+  GPIO_InitTypeDef  GPIO_InitStructure;
+
+  I2C_Cmd(I2C1, DISABLE);
+  I2C_DeInit(I2C1);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, DISABLE);
+
+  /*!< Configure I2C1 pins: SCL and SDA*/
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+}
+
+
+void i2c1_Init_Remap(void)
+{
+  I2C_InitTypeDef   I2C_InitStructure;
+  GPIO_InitTypeDef  GPIO_InitStructure;
+  // i2c1_DeInit();
+  /*!< LM75_I2C Periph clock enable */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
+    
+  /*!< LM75_I2C_SCL_GPIO_CLK, LM75_I2C_SDA_GPIO_CLK 
+       and LM75_I2C_SMBUSALERT_GPIO_CLK Periph clock enable */
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB , ENABLE);
+
+  /* Connect PXx to I2C_SCL */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource8, GPIO_AF_I2C1);
+
+  /* Connect PXx to I2C_SDA */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_I2C1); 
+
+  /*!< Configure I2C1 pins: SCL and SDA*/
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+
+  I2C_DeInit(I2C1);
+  I2C_InitStructure.I2C_ClockSpeed = 50000;
+  I2C_InitStructure.I2C_Mode =  I2C_Mode_I2C;
+  I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
+  I2C_InitStructure.I2C_OwnAddress1 =0x00;
+  I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
+  I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+
+
+  I2C_Init(I2C1, &I2C_InitStructure);
+
+  I2C_Cmd(I2C1, ENABLE);
+}
+
+
+void i2c1_remap_deinit(void){
+
+  GPIO_InitTypeDef  GPIO_InitStructure;
+
+  I2C_Cmd(I2C1, DISABLE);
+  I2C_DeInit(I2C1);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, DISABLE);
+
+  /*!< Configure I2C1 pins: SCL and SDA*/
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+}
+
+
+
 void GPIO_conf(void)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
+
+  GPIO_InitTypeDef GPIO_InitStructure;
   RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB,ENABLE);
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5|GPIO_Pin_8|GPIO_Pin_9;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_0 | GPIO_Pin_1;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
 }
 
 #ifdef  USE_FULL_ASSERT
