@@ -60,7 +60,7 @@ void i2c1_deinit(void);
 void i2c1_remap_deinit(void);
 
 void ADC_Config(void);
-
+void ADC_deinit(void);
 /**
   * @brief  Main program.
   * @param  None
@@ -80,7 +80,6 @@ int main(void)
   // GPIO_conf();
   USART_Config();
   // i2c1_Init();
-  ADC_Config();
   
   float rawTemperature = 0;
   float rawHumidity = 0;
@@ -140,15 +139,17 @@ int main(void)
     }
     
     OEM_DEACTIVE(I2C1);
-    delay(1000);
+    delay(500);
     i2c1_deinit();
     delay(1000);
     
+    ADC_Config();
+    delay(1000);
     adc_value = ADC_GetConversionValue(ADC1);
     sprintf(buffer, "ADC-VALUE : %d\r\n", adc_value);
     usart_puts(buffer);
+    ADC_deinit();
     delay(1000);
-
   }
 }
 
@@ -348,6 +349,14 @@ void ADC_Config(void)
   }
   // start conversion
   ADC_SoftwareStartConv(ADC1);// start conversion (will be endless as we are in continuous mode)
+
+}
+
+void ADC_deinit(void){
+
+  ADC_Cmd(ADC1, DISABLE);//enable ADC1
+  ADC_DeInit(ADC1);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
 
 }
 
